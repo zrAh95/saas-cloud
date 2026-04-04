@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net/http"
 	"saas-cloud/config"
+	"saas-cloud/services"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -184,9 +185,67 @@ func VerifyOTP(c *gin.Context) {
 	})
 }
 
+type LoginInput struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 func Login(c *gin.Context) {
+	var input LoginInput
+
+	// bind JSON
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid input",
+		})
+		return
+	}
+
+	// validasi kosong
+	if input.Email == "" || input.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Email & password wajib",
+		})
+		return
+	}
+
+	var userID int
+	var hashedPassword string
+	var isVerified int
+
+	// ambil user
+	query := "SELECT id, password, is_verified FROM tb_users WHERE email = ?"
+	err := config.DB.QueryRow(query, input.Email).Scan(&userID, &hashedPassword, &isVerified)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "User tidak ditemukan",
+		})
+		return
+	}
+
+	// cek password
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(input.Password))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Password salah",
+		})
+		return
+	}
+
+	// 🔐 generate JWT
+	token, err := services.GenerateToken(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Gagal generate token",
+		})
+		return
+	}
+
+	// 🔥 response baru
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login endpoint hit",
+		"message": "Login berhasil",
+		"token":   token,
 	})
 }
 

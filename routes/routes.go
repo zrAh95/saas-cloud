@@ -2,6 +2,7 @@ package routes
 
 import (
 	"saas-cloud/handlers"
+	"saas-cloud/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -9,7 +10,7 @@ import (
 func SetupRoutes(r *gin.Engine) {
 	api := r.Group("/api/v1")
 
-	// AUTH
+	// PUBLIC
 	auth := api.Group("/auth")
 	{
 		auth.POST("/register", handlers.Register)
@@ -17,6 +18,13 @@ func SetupRoutes(r *gin.Engine) {
 		auth.POST("/login", handlers.Login)
 		auth.POST("/verify-login", handlers.VerifyLogin)
 		auth.POST("/logout", handlers.Logout)
+	}
+
+	// 🔐 PROTECTED
+	authProtected := api.Group("/auth")
+	authProtected.Use(middleware.AuthMiddleware())
+	{
+		authProtected.GET("/profile", handlers.GetProfile)
 	}
 
 	// FILE
@@ -38,3 +46,4 @@ func SetupRoutes(r *gin.Engine) {
 	// LOG
 	api.GET("/logs", handlers.GetLogs)
 }
+
