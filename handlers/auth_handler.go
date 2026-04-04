@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -235,18 +236,62 @@ func Login(c *gin.Context) {
 	}
 
 	// 🔐 generate JWT
-	token, err := services.GenerateToken(userID)
+	accessToken, err := services.GenerateAccessToken(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Gagal generate token",
+			"error": "Gagal generate access token",
+		})
+		return
+	}
+
+	refreshToken, err := services.GenerateRefreshToken(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Gagal generate refresh token",
 		})
 		return
 	}
 
 	// 🔥 response baru
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login berhasil",
-		"token":   token,
+		"message":        "Login berhasil",
+		"access_token":   accessToken,
+		"refresh_token":  refreshToken,
+	})
+}
+
+func RefreshToken(c *gin.Context) {
+	var input struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	token, err := jwt.Parse(input.RefreshToken, func(token *jwt.Token) (interface{}, error) {
+		return services.SECRET_KEY, nil
+	})
+
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token tidak valid"})
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Gagal membaca token"})
+		return
+	}
+
+	userID := int(claims["user_id"].(float64))
+
+	// generate access token baru
+	newAccessToken, _ := services.GenerateAccessToken(userID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"access_token": newAccessToken,
 	})
 }
 
