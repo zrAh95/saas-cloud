@@ -30,6 +30,13 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		tokenString := parts[1]
 
+		// cek blacklist
+		if services.IsTokenBlacklisted(tokenString) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token sudah logout"})
+			c.Abort()
+			return
+		}
+
 		// parse token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			return services.SECRET_KEY, nil

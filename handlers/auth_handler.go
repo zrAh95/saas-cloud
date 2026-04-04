@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"saas-cloud/config"
 	"saas-cloud/services"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -256,7 +257,25 @@ func VerifyLogin(c *gin.Context) {
 }
 
 func Logout(c *gin.Context) {
+	authHeader := c.GetHeader("Authorization")
+
+	if authHeader == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token kosong"})
+		return
+	}
+
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Format token salah"})
+		return
+	}
+
+	tokenString := parts[1]
+
+	// blacklist token
+	services.BlacklistToken(tokenString)
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Logout endpoint hit",
+		"message": "Logout berhasil",
 	})
 }
