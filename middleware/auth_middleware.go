@@ -20,6 +20,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// split Bearer token
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Format token salah"})
@@ -29,6 +30,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		tokenString := parts[1]
 
+		// parse token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			return services.SECRET_KEY, nil
 		})
@@ -39,18 +41,18 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// 🔥 ambil claims
+		// ambil claims
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token claims error"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Gagal membaca token"})
 			c.Abort()
 			return
 		}
 
-		// 🔥 ambil user_id
+		// ambil user_id
 		userID := int(claims["user_id"].(float64))
 
-		// 🔥 simpan ke context
+		// simpan ke context
 		c.Set("user_id", userID)
 
 		c.Next()
