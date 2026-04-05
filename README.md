@@ -4,6 +4,8 @@
 - Register user
 - OTP verification
 - MySQL integration
+- JWT Token Login
+- Refresh Token Every 15 minutes
 
 ## Tech Stack
 - Golang (Gin)
