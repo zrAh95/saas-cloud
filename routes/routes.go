@@ -16,8 +16,9 @@ func SetupRoutes(r *gin.Engine) {
 		auth.POST("/register", handlers.Register)
 		auth.POST("/verify", handlers.VerifyOTP)
 		auth.POST("/login", handlers.Login)
-		auth.POST("/verify-login", handlers.VerifyLogin)
 		auth.POST("/logout", handlers.Logout)
+		//buat refresh token 
+		auth.POST("/refresh", handlers.RefreshToken)
 	}
 
 	// 🔐 PROTECTED

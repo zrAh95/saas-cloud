@@ -4,22 +4,27 @@ import (
 	"database/sql"
 	"log"
 
-	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
-var DB *sql.DB
+var DB *gorm.DB
+var SQLDB *sql.DB
 
 func ConnectDB() {
-	dsn := "root:@tcp(127.0.0.1:3306)/dbcloud?parseTime=true&loc=Local"
+	dsn := "root:@tcp(127.0.0.1:3306)/dbcloud?parseTime=true"
 
-	db, err := sql.Open("mysql", dsn)
+	// GORM
+	gormDB, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Gagal connect GORM")
 	}
+	DB = gormDB
 
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
+	// SQL (buat auth lama)
+	sqlDB, err := sql.Open("mysql", dsn)
+	if err != nil {
+		log.Fatal("Gagal connect SQL")
 	}
-
-	DB = db
+	SQLDB = sqlDB
 }

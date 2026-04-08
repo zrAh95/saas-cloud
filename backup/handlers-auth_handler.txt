@@ -22,49 +22,61 @@ type RegisterInput struct {
 
 func generateOTP() string {
 	rand.Seed(time.Now().UnixNano())
-	otp := rand.Intn(900000) + 100000
+	otp := rand.Intn(900000) + 100000 // 6 digit
 	return fmt.Sprintf("%06d", otp)
 }
 
 func Register(c *gin.Context) {
 	var input RegisterInput
 
+	// ambil request
 	if err := c.ShouldBindJSON(&input); err != nil {
-		utils.Error(c, http.StatusBadRequest, "Invalid input")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid input",
+		})
 		return
 	}
 
+	// validasi sederhana
 	if input.Email == "" || input.Password == "" {
-		utils.Error(c, http.StatusBadRequest, "Email & password wajib")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Email & password wajib",
+		})
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), 10)
-	if err != nil {
-		utils.Error(c, http.StatusInternalServerError, "Terjadi kesalahan pada server")
-		return
-	}
+	// hash password
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(input.Password), 10)
 
+	// insert user
 	query := "INSERT INTO tb_users (email, password) VALUES (?, ?)"
 	result, err := config.SQLDB.Exec(query, input.Email, string(hashedPassword))
 	if err != nil {
-		utils.Error(c, http.StatusInternalServerError, "Terjadi kesalahan pada server")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Gagal insert user",
+		})
 		return
 	}
 
 	userID, _ := result.LastInsertId()
 
+	// generate OTP
 	otpCode := generateOTP()
+
+	// expired 7 menit
 	expiredAt := time.Now().UTC().Add(7 * time.Minute)
 
+	// simpan OTP ke DB
 	queryOTP := "INSERT INTO tb_otps (user_id, otp_code, expired_at) VALUES (?, ?, ?)"
 	_, err = config.SQLDB.Exec(queryOTP, userID, otpCode, expiredAt)
 	if err != nil {
-		utils.Error(c, http.StatusInternalServerError, "Terjadi kesalahan pada server")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Gagal simpan OTP",
+		})
 		return
 	}
 
-	utils.Success(c, "Registrasi berhasil, silakan cek OTP", nil)
+	utils.Success(c, "Verifikasi berhasil", nil)
 }
 
 type VerifyOTPInput struct {
@@ -75,13 +87,21 @@ type VerifyOTPInput struct {
 func VerifyOTP(c *gin.Context) {
 	var input VerifyOTPInput
 
+	// ambil request
 	if err := c.ShouldBindJSON(&input); err != nil {
-		utils.Error(c, http.StatusBadRequest, "Invalid input")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid input",
+		})
 		return
 	}
 
+	fmt.Println("TIME GO:", time.Now())
+
+	// validasi kosong
 	if input.Email == "" || input.OTP == "" {
-		utils.Error(c, http.StatusBadRequest, "Email & OTP wajib")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Email & OTP wajib",
+		})
 		return
 	}
 
@@ -89,8 +109,9 @@ func VerifyOTP(c *gin.Context) {
 
 	queryUser := "SELECT id FROM tb_users WHERE email = ?"
 	err := config.SQLDB.QueryRow(queryUser, input.Email).Scan(&userID)
+
 	if err != nil {
-		utils.Error(c, http.StatusUnauthorized, "OTP tidak valid atau expired")
+		utils.Error(c, http.StatusUnauthorized, "Email atau password salah")
 		return
 	}
 
@@ -106,29 +127,51 @@ func VerifyOTP(c *gin.Context) {
 	LIMIT 1`
 
 	err = config.SQLDB.QueryRow(queryOTP, userID).Scan(&otpCode, &expiredAt, &isUsed)
+
 	if err != nil {
 		utils.Error(c, http.StatusBadRequest, "OTP tidak valid atau expired")
 		return
 	}
 
-	if input.OTP != otpCode || time.Now().After(expiredAt) || isUsed == 1 {
+	// validasi kecocokan OTP nya
+	if input.OTP != otpCode {
 		utils.Error(c, http.StatusBadRequest, "OTP tidak valid atau expired")
 		return
 	}
 
+	// ngecek expired OTP nya
+	if time.Now().After(expiredAt) {
+		utils.Error(c, http.StatusBadRequest, "OTP tidak valid atau expired")
+		return
+	}
+
+	// cek kode OTP kalo udah kepake
+	if isUsed == 1 {
+		utils.Error(c, http.StatusBadRequest, "OTP tidak valid atau expired")
+		return
+	}
+
+	// update user jadi verified
 	_, err = config.SQLDB.Exec("UPDATE tb_users SET is_verified = 1 WHERE id = ?", userID)
 	if err != nil {
-		utils.Error(c, http.StatusInternalServerError, "Terjadi kesalahan pada server")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Gagal update user",
+		})
 		return
 	}
 
+	// tandai OTP sudah dipakai
 	_, err = config.SQLDB.Exec("UPDATE tb_otps SET is_used = 1 WHERE user_id = ?", userID)
 	if err != nil {
-		utils.Error(c, http.StatusInternalServerError, "Terjadi kesalahan pada server")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Gagal update OTP",
+		})
 		return
 	}
 
-	utils.Success(c, "Verifikasi berhasil", nil)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "OTP valid, akun aktif",
+	})
 }
 
 type LoginInput struct {
@@ -139,13 +182,19 @@ type LoginInput struct {
 func Login(c *gin.Context) {
 	var input LoginInput
 
+	// bind JSON
 	if err := c.ShouldBindJSON(&input); err != nil {
-		utils.Error(c, http.StatusBadRequest, "Invalid input")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid input",
+		})
 		return
 	}
 
+	// validasi kosong
 	if input.Email == "" || input.Password == "" {
-		utils.Error(c, http.StatusBadRequest, "Email & password wajib")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Email & password wajib",
+		})
 		return
 	}
 
@@ -153,39 +202,45 @@ func Login(c *gin.Context) {
 	var hashedPassword string
 	var isVerified int
 
+	// ambil user
 	query := "SELECT id, password, is_verified FROM tb_users WHERE email = ?"
 	err := config.SQLDB.QueryRow(query, input.Email).Scan(&userID, &hashedPassword, &isVerified)
+
 	if err != nil {
-		utils.Error(c, http.StatusUnauthorized, "Email atau password salah")
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "User tidak ditemukan",
+		})
 		return
 	}
 
-	if isVerified == 0 {
-		utils.Error(c, http.StatusUnauthorized, "Akun belum terverifikasi")
-		return
-	}
-
+	// cek password
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(input.Password))
 	if err != nil {
 		utils.Error(c, http.StatusUnauthorized, "Email atau password salah")
 		return
 	}
 
+	// 🔐 generate JWT
 	accessToken, err := services.GenerateAccessToken(userID)
 	if err != nil {
-		utils.Error(c, http.StatusInternalServerError, "Terjadi kesalahan pada server")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Gagal generate access token",
+		})
 		return
 	}
 
 	refreshToken, err := services.GenerateRefreshToken(userID)
 	if err != nil {
-		utils.Error(c, http.StatusInternalServerError, "Terjadi kesalahan pada server")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Gagal generate refresh token",
+		})
 		return
 	}
 
+	// 🔥 response baru
 	utils.Success(c, "Login berhasil", gin.H{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+    "access_token": accessToken,
+    "refresh_token": refreshToken,
 	})
 }
 
@@ -195,7 +250,7 @@ func RefreshToken(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		utils.Error(c, http.StatusBadRequest, "Invalid input")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
@@ -204,26 +259,29 @@ func RefreshToken(c *gin.Context) {
 	})
 
 	if err != nil || !token.Valid {
-		utils.Error(c, http.StatusUnauthorized, "Token tidak valid")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token tidak valid"})
 		return
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		utils.Error(c, http.StatusUnauthorized, "Token tidak valid")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Gagal membaca token"})
 		return
 	}
 
 	userID := int(claims["user_id"].(float64))
 
-	newAccessToken, err := services.GenerateAccessToken(userID)
-	if err != nil {
-		utils.Error(c, http.StatusInternalServerError, "Terjadi kesalahan pada server")
-		return
-	}
+	// generate access token baru
+	newAccessToken, _ := services.GenerateAccessToken(userID)
 
-	utils.Success(c, "Refresh token berhasil", gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"access_token": newAccessToken,
+	})
+}
+
+func VerifyLogin(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Verify login endpoint hit",
 	})
 }
 
@@ -231,19 +289,22 @@ func Logout(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 
 	if authHeader == "" {
-		utils.Error(c, http.StatusUnauthorized, "Token tidak valid")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token kosong"})
 		return
 	}
 
 	parts := strings.Split(authHeader, " ")
 	if len(parts) != 2 {
-		utils.Error(c, http.StatusUnauthorized, "Token tidak valid")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Format token salah"})
 		return
 	}
 
 	tokenString := parts[1]
 
+	// blacklist token
 	services.BlacklistToken(tokenString)
 
-	utils.Success(c, "Logout berhasil", nil)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Logout berhasil",
+	})
 }
