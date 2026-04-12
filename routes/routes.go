@@ -30,8 +30,9 @@ func SetupRoutes(r *gin.Engine) {
 
 	// FILE
 	files := api.Group("/files")
+	files.Use(middleware.AuthMiddleware())
 	{
-		files.POST("/", handlers.UploadFile)
+		files.POST("/upload", handlers.UploadFile)
 		files.GET("/", handlers.GetFiles)
 		files.GET("/:id", handlers.GetFileByID)
 		files.DELETE("/:id", handlers.DeleteFile)

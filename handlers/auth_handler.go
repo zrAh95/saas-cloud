@@ -64,7 +64,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	utils.Success(c, "Registrasi berhasil, silakan cek OTP", nil)
+	utils.Success(c, http.StatusOK, "Registrasi berhasil, silakan cek OTP", nil)
 }
 
 type VerifyOTPInput struct {
@@ -128,7 +128,7 @@ func VerifyOTP(c *gin.Context) {
 		return
 	}
 
-	utils.Success(c, "Verifikasi berhasil", nil)
+	utils.Success(c, http.StatusOK, "Verifikasi berhasil", nil)
 }
 
 type LoginInput struct {
@@ -183,7 +183,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	utils.Success(c, "Login berhasil", gin.H{
+	utils.Success(c, http.StatusOK, "Login berhasil", gin.H{
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 	})
@@ -222,7 +222,7 @@ func RefreshToken(c *gin.Context) {
 		return
 	}
 
-	utils.Success(c, "Refresh token berhasil", gin.H{
+	utils.Success(c, http.StatusOK, "Refresh token berhasil", gin.H{
 		"access_token": newAccessToken,
 	})
 }
@@ -245,5 +245,5 @@ func Logout(c *gin.Context) {
 
 	services.BlacklistToken(tokenString)
 
-	utils.Success(c, "Logout berhasil", nil)
+	utils.Success(c, http.StatusOK, "Logout Berhasil", nil)
 }
