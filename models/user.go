@@ -1,0 +1,15 @@
+package models
+
+import "time"
+
+type User struct {
+	ID         uint      `gorm:"primaryKey;column:id"`
+	Email      string    `gorm:"column:email"`
+	Password   string    `gorm:"column:password"`
+	IsVerified int       `gorm:"column:is_verified"`
+	CreatedAt  time.Time `gorm:"column:created_at"`
+}
+
+func (User) TableName() string {
+	return "tb_users"
+}

@@ -65,7 +65,7 @@ func UploadFile(c *gin.Context) {
 
 	// 6. simpan ke DB
 	newFile := models.File{
-		UserID:       uint(userID),
+		UserID:       userID,
 		FileName:     fileName, // <- ganti ini juga biar konsisten
 		OriginalName: file.Filename,
 		FilePath:     filePath,
@@ -79,11 +79,23 @@ func UploadFile(c *gin.Context) {
 }
 
 func GetFiles(c *gin.Context) {
-	userID := c.GetInt("user_id")
+
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		utils.Error(c, http.StatusUnauthorized, "User tidak ditemukan")
+		return
+	}
+
+	userID := userIDInterface.(int)
 
 	var files []models.File
 
-	config.DB.Where("user_id = ?", userID).Find(&files)
+	result := config.DB.Where("user_id = ?", userID).Find(&files)
+
+	if result.Error != nil {
+		utils.Error(c, http.StatusInternalServerError, result.Error.Error())
+		return
+	}
 
 	utils.Success(c, http.StatusOK, "List file", files)
 }
@@ -100,7 +112,7 @@ func GetFileByID(c *gin.Context) {
 	}
 
 	// SECURITY
-	if file.UserID != uint(userID) {
+	if file.UserID != userID {
 		utils.Error(c, http.StatusForbidden, "Akses ditolak")
 		return
 	}
@@ -109,27 +121,31 @@ func GetFileByID(c *gin.Context) {
 }
 
 func DeleteFile(c *gin.Context) {
-	userID := c.GetInt("user_id")
-	id := c.Param("id")
+    userID := c.GetInt("user_id")
+    id := c.Param("id")
 
-	var file models.File
+    var file models.File
 
-	if err := config.DB.First(&file, id).Error; err != nil {
-		utils.Error(c, http.StatusNotFound, "File tidak ditemukan")
-		return
-	}
+    // ambil file
+    if err := config.DB.First(&file, id).Error; err != nil {
+        utils.Error(c, http.StatusNotFound, "File tidak ditemukan")
+        return
+    }
 
-	// SECURITY
-	if file.UserID != uint(userID) {
-		utils.Error(c, http.StatusForbidden, "Akses ditolak")
-		return
-	}
+    // 🔒 SECURITY: cek ownership
+    if file.UserID != userID {
+        utils.Error(c, http.StatusForbidden, "Akses ditolak")
+        return
+    }
 
-	// hapus file fisik
-	os.Remove(file.FilePath)
+    // hapus file fisik
+    if err := os.Remove(file.FilePath); err != nil {
+        utils.Error(c, http.StatusInternalServerError, "Gagal hapus file fisik")
+        return
+    }
 
-	// hapus DB
-	config.DB.Delete(&file)
+    // hapus dari DB
+    config.DB.Delete(&file)
 
-	utils.Success(c, http.StatusOK, "File berhasil dihapus", nil)
+    utils.Success(c, http.StatusOK, "File berhasil dihapus", nil)
 }
