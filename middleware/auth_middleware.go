@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -37,8 +38,12 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// parse token
+		// parse token dengan algorithm validation
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// Validate algorithm
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("invalid signing method")
+			}
 			return services.SECRET_KEY, nil
 		})
 
@@ -56,11 +61,23 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// ambil user_id
-		userID := int(claims["user_id"].(float64))
+		// ambil user_id dengan safe type assertion
+		userIDFloat, exists := claims["user_id"]
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token tidak valid"})
+			c.Abort()
+			return
+		}
+
+		userID, ok := userIDFloat.(float64)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token tidak valid"})
+			c.Abort()
+			return
+		}
 
 		// simpan ke context
-		c.Set("user_id", userID)
+		c.Set("user_id", int(userID))
 
 		c.Next()
 	}

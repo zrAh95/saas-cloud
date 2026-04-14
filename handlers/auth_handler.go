@@ -34,8 +34,37 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// Trim whitespace
+	input.Email = strings.TrimSpace(input.Email)
+	input.Password = strings.TrimSpace(input.Password)
+
 	if input.Email == "" || input.Password == "" {
 		utils.Error(c, http.StatusBadRequest, "Email & password wajib")
+		return
+	}
+
+	// Validate email format
+	if !utils.ValidateEmail(input.Email) {
+		utils.Error(c, http.StatusBadRequest, "Format email tidak valid")
+		return
+	}
+
+	// Check email already exists
+	if utils.CheckEmailExists(input.Email) {
+		utils.Error(c, http.StatusBadRequest, "Email sudah terdaftar")
+		return
+	}
+
+	// Validate password strength
+	passwordErrors := utils.ValidatePassword(input.Password)
+	if len(passwordErrors) > 0 {
+		utils.Error(c, http.StatusBadRequest, "Password tidak memenuhi kriteria: "+passwordErrors["length"])
+		return
+	}
+
+	// Rate limiting: 5 attempts per 15 minutes
+	if !services.CheckRateLimit("register:"+input.Email, 5, 900) {
+		utils.Error(c, http.StatusTooManyRequests, "Terlalu banyak upaya registrasi, coba lagi dalam beberapa menit")
 		return
 	}
 
@@ -64,6 +93,10 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// Log: In production, log this OTP ke console/email, tapi buat dev gw cout ke log
+	fmt.Printf("[OTP] Email: %s, OTP: %s\n", input.Email, otpCode)
+
+	services.ResetRateLimit("register:" + input.Email)
 	utils.Success(c, http.StatusOK, "Registrasi berhasil, silakan cek OTP", nil)
 }
 
@@ -82,6 +115,12 @@ func VerifyOTP(c *gin.Context) {
 
 	if input.Email == "" || input.OTP == "" {
 		utils.Error(c, http.StatusBadRequest, "Email & OTP wajib")
+		return
+	}
+
+	// Rate limiting: max 10 failed OTP attempts per 15 minutes
+	if !services.CheckRateLimit("verify_otp:"+input.Email, 10, 900) {
+		utils.Error(c, http.StatusTooManyRequests, "Terlalu banyak percobaan verifikasi OTP. Coba lagi dalam 15 menit")
 		return
 	}
 
@@ -128,6 +167,9 @@ func VerifyOTP(c *gin.Context) {
 		return
 	}
 
+	// Reset rate limit on successful verification
+	services.ResetRateLimit("verify_otp:" + input.Email)
+
 	utils.Success(c, http.StatusOK, "Verifikasi berhasil", nil)
 }
 
@@ -144,8 +186,26 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// Trim whitespace
+	input.Email = strings.TrimSpace(input.Email)
+	input.Password = strings.TrimSpace(input.Password)
+
 	if input.Email == "" || input.Password == "" {
 		utils.Error(c, http.StatusBadRequest, "Email & password wajib")
+		return
+	}
+
+	// Validate email format
+	if !utils.ValidateEmail(input.Email) {
+		utils.Error(c, http.StatusBadRequest, "Format email tidak valid")
+		return
+	}
+
+	// Rate limiting: max 5 failed attempts per 15 minutes
+	if !services.CheckRateLimit("login:"+input.Email, 5, 900) {
+		remaining := services.GetRateLimitRemaining("login:"+input.Email, 5, 900)
+		utils.Error(c, http.StatusTooManyRequests, 
+			fmt.Sprintf("Terlalu banyak percobaan login. Coba lagi dalam 15 menit. Sisa percobaan: %d", remaining))
 		return
 	}
 
@@ -183,6 +243,9 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// Reset rate limit on successful login
+	services.ResetRateLimit("login:" + input.Email)
+
 	utils.Success(c, http.StatusOK, "Login berhasil", gin.H{
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
@@ -200,6 +263,10 @@ func RefreshToken(c *gin.Context) {
 	}
 
 	token, err := jwt.Parse(input.RefreshToken, func(token *jwt.Token) (interface{}, error) {
+		// Validate algorithm
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("invalid signing method")
+		}
 		return services.SECRET_KEY, nil
 	})
 
@@ -214,9 +281,20 @@ func RefreshToken(c *gin.Context) {
 		return
 	}
 
-	userID := int(claims["user_id"].(float64))
+	// Safe type assertion with error handling
+	userIDFloat, exists := claims["user_id"]
+	if !exists {
+		utils.Error(c, http.StatusUnauthorized, "Token tidak valid")
+		return
+	}
 
-	newAccessToken, err := services.GenerateAccessToken(userID)
+	userID, ok := userIDFloat.(float64)
+	if !ok {
+		utils.Error(c, http.StatusUnauthorized, "Token tidak valid")
+		return
+	}
+
+	newAccessToken, err := services.GenerateAccessToken(int(userID))
 	if err != nil {
 		utils.Error(c, http.StatusInternalServerError, "Terjadi kesalahan pada server")
 		return

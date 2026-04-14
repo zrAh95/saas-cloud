@@ -1,12 +1,22 @@
 package services
 
 import (
+	"log"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var SECRET_KEY = []byte("secret_gantiyangaman")
+var SECRET_KEY []byte
+
+func init() {
+	secretKey := os.Getenv("JWT_SECRET_KEY")
+	if secretKey == "" {
+		log.Fatal("JWT_SECRET_KEY environment variable not set")
+	}
+	SECRET_KEY = []byte(secretKey)
+}
 
 func GenerateToken(userID int) (string, error) {
 	claims := jwt.MapClaims{

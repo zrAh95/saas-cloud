@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type FileAccsess struct {
+type FileAccess struct {
 	ID          uint      `gorm:"primaryKey;column:id"`
 	FileID      int       `gorm:"column:file_id"`
 	OwnerID     int       `gorm:"column:owner_id"`
@@ -11,6 +11,6 @@ type FileAccsess struct {
 	CreatedAt   time.Time `gorm:"column:created_at"`
 }
 
-func (FileAccsess) TableName() string {
+func (FileAccess) TableName() string {
 	return "tb_file_access"
 }

@@ -38,14 +38,14 @@ func SetupRoutes(r *gin.Engine) {
 		files.DELETE("/:id", handlers.DeleteFile)
 		files.POST("/:id/share", handlers.ShareFile)
 		files.GET("/shared", handlers.GetSharedFiles)
+		files.POST("/:id/share/accept", handlers.AcceptShare)
 	}
 
-	api.POST("/files/share/:id/accept", handlers.AcceptShare)
-
-	// USER
-	api.GET("/user/profile", handlers.GetProfile)
-
-	// LOG
-	api.GET("/logs", handlers.GetLogs)
+	// LOG (protected)
+	logs := api.Group("/logs")
+	logs.Use(middleware.AuthMiddleware())
+	{
+		logs.GET("/", handlers.GetLogs)
+	}
 }
 
