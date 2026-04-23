@@ -211,3 +211,10 @@ function formatGigabytes(bytes) {
   const gb = Number(bytes || 0) / (1024 * 1024 * 1024);
   return `${gb.toFixed(2)} GB`;
 }
+
+function setText(id, value) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = value;
+  }
+}

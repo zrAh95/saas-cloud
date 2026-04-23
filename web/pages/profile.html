@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - SaaS Cloud</title>
+  <link rel="stylesheet" href="/mazer-assets/compiled/css/app.css">
+  <link rel="stylesheet" href="/mazer-assets/compiled/css/app-dark.css">
+  <link rel="stylesheet" href="/mazer-assets/compiled/css/iconly.css">
+  <link rel="stylesheet" href="/mazer-assets/extensions/sweetalert2/sweetalert2.min.css">
+</head>
+<body>
+  <script src="/mazer-assets/static/js/initTheme.js"></script>
+  <div id="app">
+    <div id="sidebar">
+      <div class="sidebar-wrapper active">
+        <div class="sidebar-header position-relative">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="logo"><a href="/dashboard" style="font-weight:800;font-size:1.5rem;color:#435ebe;">SaaS Cloud</a></div>
+          </div>
+        </div>
+        <div class="sidebar-menu">
+          <ul class="menu">
+            <li class="sidebar-title">Menu</li>
+            <li class="sidebar-item"><a href="/dashboard" class="sidebar-link"><i class="bi bi-grid-fill"></i><span>Dashboard</span></a></li>
+            <li class="sidebar-item active"><a href="/profile-app" class="sidebar-link"><i class="bi bi-person-fill"></i><span>Profile</span></a></li>
+            <li class="sidebar-item"><a href="/files-app" class="sidebar-link"><i class="bi bi-folder-fill"></i><span>My Files</span></a></li>
+            <li class="sidebar-item"><a href="/shared-app" class="sidebar-link"><i class="bi bi-share-fill"></i><span>Shared With Me</span></a></li>
+            <li class="sidebar-item"><a href="/folder-app" class="sidebar-link"><i class="bi bi-diagram-3-fill"></i><span>Folder View</span></a></li>
+            <li class="sidebar-item"><a href="#" id="logoutBtn" class="sidebar-link"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="main">
+      <header class="mb-3">
+        <a href="#" class="burger-btn d-block d-xl-none"><i class="bi bi-justify fs-3"></i></a>
+      </header>
+
+      <div class="page-heading">
+        <h3>Profile</h3>
+        <p class="text-muted">Atur nama, email login, dan password akun cloud rumah kamu.</p>
+      </div>
+
+      <div class="page-content">
+        <section class="row">
+          <div class="col-12 col-lg-4">
+            <div class="card">
+              <div class="card-body text-center">
+                <div class="mb-3 d-flex justify-content-center">
+                  <div class="rounded-circle overflow-hidden bg-primary d-flex align-items-center justify-content-center" style="width:112px;height:112px;">
+                    <img id="profileAvatarImage" class="d-none w-100 h-100" style="object-fit:cover;" alt="Profile photo">
+                    <span id="profileAvatarFallback" class="text-white"><i class="bi bi-person-fill fs-1"></i></span>
+                  </div>
+                </div>
+                <h4 id="profileUserId">#-</h4>
+                <p class="text-muted mb-1">Status Akun</p>
+                <span id="profileVerified" class="badge bg-light-success">-</span>
+                <hr>
+                <div class="mb-3">
+                  <label for="profileAvatarInput" class="form-label">Foto Profile</label>
+                  <input id="profileAvatarInput" type="file" class="form-control" accept="image/png,image/jpeg,image/webp">
+                  <button class="btn btn-outline-primary btn-sm mt-2" type="button" onclick="uploadProfileAvatar()">Upload Foto</button>
+                </div>
+                <hr>
+                <p class="text-muted mb-1">Dibuat</p>
+                <strong id="profileCreatedAt">-</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-8">
+            <div class="card">
+              <div class="card-header">
+                <h4>Edit Profile</h4>
+              </div>
+              <div class="card-body">
+                <form id="profileForm">
+                  <div class="form-group mb-3">
+                    <label for="profileName">Nama</label>
+                    <input id="profileName" type="text" class="form-control" maxlength="100" placeholder="Nama kamu">
+                  </div>
+                  <div class="form-group mb-3">
+                    <label for="profileEmail">Email</label>
+                    <input id="profileEmail" type="email" class="form-control" placeholder="email@domain.com" required>
+                  </div>
+                  <div class="form-group mb-3">
+                    <label for="profilePhone">Nomor WhatsApp</label>
+                    <input id="profilePhone" type="text" class="form-control" placeholder="contoh: 08123456789">
+                  </div>
+                  <div class="alert alert-light-warning">
+                    Isi password lama kalau mau mengganti email, nomor WhatsApp, atau password. Kalau cuma ganti nama, password lama boleh kosong.
+                  </div>
+                  <div class="form-group mb-3">
+                    <label for="currentPassword">Password Lama</label>
+                    <input id="currentPassword" type="password" class="form-control" placeholder="Password lama">
+                  </div>
+                  <div class="form-group mb-4">
+                    <label for="newPassword">Password Baru</label>
+                    <input id="newPassword" type="password" class="form-control" placeholder="Kosongkan kalau tidak diganti">
+                  </div>
+                  <button type="submit" class="btn btn-primary">Simpan Profile</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="/frontend-js/api.js?v=3"></script>
+  <script src="/frontend-js/auth.js"></script>
+  <script src="/frontend-js/guard.js"></script>
+  <script src="/frontend-js/profile.js?v=3"></script>
+  <script src="/mazer-assets/extensions/sweetalert2/sweetalert2.min.js"></script>
+  <script src="/mazer-assets/static/js/components/dark.js"></script>
+  <script src="/mazer-assets/extensions/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+  <script src="/mazer-assets/compiled/js/app.js"></script>
+  <script>
+    requireAuth();
+    bindLogoutButton();
+    loadProfile();
+    document.getElementById("profileForm").addEventListener("submit", updateProfile);
+  </script>
+</body>
+</html>

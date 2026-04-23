@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - SaaS Cloud</title>
+  <link rel="stylesheet" href="/mazer-assets/compiled/css/app.css">
+  <link rel="stylesheet" href="/mazer-assets/compiled/css/app-dark.css">
+  <link rel="stylesheet" href="/mazer-assets/compiled/css/auth.css">
+  <link rel="stylesheet" href="/mazer-assets/extensions/sweetalert2/sweetalert2.min.css">
+</head>
+<body>
+  <script src="/mazer-assets/static/js/initTheme.js"></script>
+  <div id="auth">
+    <div class="row h-100">
+      <div class="col-lg-5 col-12">
+        <div id="auth-left">
+          <div class="auth-logo">
+            <a href="/login"><strong style="font-size:1.8rem;color:#435ebe;">SaaS Cloud</strong></a>
+          </div>
+          <h1 class="auth-title">Register.</h1>
+          <p class="auth-subtitle mb-4">Buat akun dan terima OTP lewat WhatsApp Wablas.</p>
+
+          <form id="registerForm">
+            <div class="form-group position-relative has-icon-left mb-4">
+              <input id="registerEmail" type="email" class="form-control form-control-xl" placeholder="Email" required>
+              <div class="form-control-icon"><i class="bi bi-envelope"></i></div>
+            </div>
+            <div class="form-group position-relative has-icon-left mb-4">
+              <input id="registerPhone" type="text" class="form-control form-control-xl" placeholder="WhatsApp, contoh 08123456789" required>
+              <div class="form-control-icon"><i class="bi bi-whatsapp"></i></div>
+            </div>
+            <div class="form-group position-relative has-icon-left mb-4">
+              <input id="registerPassword" type="password" class="form-control form-control-xl" placeholder="Password" required>
+              <div class="form-control-icon"><i class="bi bi-shield-lock"></i></div>
+            </div>
+            <button class="btn btn-primary btn-block btn-lg shadow-lg mt-3" type="submit">Register & Kirim OTP</button>
+          </form>
+
+          <form id="verifyForm" class="mt-4 d-none">
+            <div class="alert alert-light-primary">
+              OTP sudah dikirim ke WhatsApp. Masukkan kode 6 digit untuk aktivasi akun.
+            </div>
+            <div class="form-group position-relative has-icon-left mb-4">
+              <input id="otpCode" type="text" class="form-control form-control-xl" placeholder="Kode OTP" maxlength="6" required>
+              <div class="form-control-icon"><i class="bi bi-key"></i></div>
+            </div>
+            <button class="btn btn-success btn-block btn-lg shadow-lg" type="submit">Verifikasi OTP</button>
+          </form>
+
+          <div class="text-center mt-5 text-lg fs-4">
+            <p class="text-gray-600 mb-2">Sudah punya akun?</p>
+            <p><a class="font-bold" href="/login">Login sekarang</a></p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-7 d-none d-lg-block">
+        <div id="auth-right"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/frontend-js/api.js"></script>
+  <script src="/frontend-js/auth.js"></script>
+  <script src="/mazer-assets/extensions/sweetalert2/sweetalert2.min.js"></script>
+  <script>
+    let pendingEmail = "";
+
+    document.getElementById("registerForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      pendingEmail = document.getElementById("registerEmail").value.trim();
+
+      try {
+        const response = await registerAccount(
+          pendingEmail,
+          document.getElementById("registerPhone").value.trim(),
+          document.getElementById("registerPassword").value
+        );
+        await showSuccess(response.message || "Register berhasil, cek WhatsApp kamu.");
+        document.getElementById("verifyForm").classList.remove("d-none");
+        document.getElementById("otpCode").focus();
+      } catch (error) {
+        await showError(error.message, "Register gagal");
+      }
+    });
+
+    document.getElementById("verifyForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      try {
+        const response = await verifyOtp(pendingEmail, document.getElementById("otpCode").value.trim());
+        await showSuccess(response.message || "Akun berhasil diverifikasi.");
+        window.location.href = "/login";
+      } catch (error) {
+        await showError(error.message, "Verifikasi gagal");
+      }
+    });
+  </script>
+</body>
+</html>

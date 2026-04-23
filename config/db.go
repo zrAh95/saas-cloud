@@ -67,4 +67,16 @@ func ensureUserProfileColumns() {
 			log.Fatal("Gagal menambahkan kolom name pada tb_users")
 		}
 	}
+
+	if !columnExists("dbcloud", "tb_users", "phone") {
+		if _, err := SQLDB.Exec("ALTER TABLE tb_users ADD COLUMN phone VARCHAR(30) NULL AFTER email"); err != nil {
+			log.Fatal("Gagal menambahkan kolom phone pada tb_users")
+		}
+	}
+
+	if !columnExists("dbcloud", "tb_users", "avatar_path") {
+		if _, err := SQLDB.Exec("ALTER TABLE tb_users ADD COLUMN avatar_path VARCHAR(255) NULL AFTER phone"); err != nil {
+			log.Fatal("Gagal menambahkan kolom avatar_path pada tb_users")
+		}
+	}
 }

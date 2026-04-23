@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"saas-cloud/config"
@@ -17,6 +18,7 @@ import (
 
 type RegisterInput struct {
 	Email    string `json:"email"`
+	Phone    string `json:"phone"`
 	Password string `json:"password"`
 }
 
@@ -36,6 +38,7 @@ func Register(c *gin.Context) {
 
 	// Trim whitespace
 	input.Email = strings.TrimSpace(input.Email)
+	input.Phone = utils.NormalizeWhatsAppNumber(input.Phone)
 	input.Password = strings.TrimSpace(input.Password)
 
 	if input.Email == "" || input.Password == "" {
@@ -43,9 +46,19 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	if services.IsWablasConfigured() && input.Phone == "" {
+		utils.Error(c, http.StatusBadRequest, "Nomor WhatsApp wajib untuk menerima OTP")
+		return
+	}
+
 	// Validate email format
 	if !utils.ValidateEmail(input.Email) {
 		utils.Error(c, http.StatusBadRequest, "Format email tidak valid")
+		return
+	}
+
+	if input.Phone != "" && !utils.ValidateWhatsAppNumber(input.Phone) {
+		utils.Error(c, http.StatusBadRequest, "Format nomor WhatsApp tidak valid")
 		return
 	}
 
@@ -84,8 +97,8 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	query := "INSERT INTO tb_users (email, password) VALUES (?, ?)"
-	result, err := config.SQLDB.Exec(query, input.Email, string(hashedPassword))
+	query := "INSERT INTO tb_users (email, phone, password) VALUES (?, ?, ?)"
+	result, err := config.SQLDB.Exec(query, input.Email, input.Phone, string(hashedPassword))
 	if err != nil {
 		utils.Error(c, http.StatusInternalServerError, "Terjadi kesalahan pada server")
 		return
@@ -103,8 +116,16 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Log: In production, log this OTP ke console/email, tapi buat dev gw cout ke log
-	fmt.Printf("[OTP] Email: %s, OTP: %s\n", input.Email, otpCode)
+	if services.IsWablasConfigured() {
+		if err := services.SendWhatsAppOTP(input.Phone, otpCode); err != nil {
+			log.Printf("[WABLAS] Gagal kirim OTP ke %s: %v", input.Phone, err)
+			utils.Error(c, http.StatusInternalServerError, "Gagal kirim OTP WhatsApp")
+			return
+		}
+	} else {
+		// Fallback dev lokal kalau Wablas belum dikonfigurasi.
+		fmt.Printf("[OTP] Email: %s, WA: %s, OTP: %s\n", input.Email, input.Phone, otpCode)
+	}
 
 	services.ResetRateLimit("register:" + input.Email)
 	utils.Success(c, http.StatusOK, "Registrasi berhasil, silakan cek OTP", nil)

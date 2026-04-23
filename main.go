@@ -35,8 +35,16 @@ func main() {
 		c.File("./web/pages/login.html")
 	})
 
+	r.GET("/register", func(c *gin.Context) {
+		c.File("./web/pages/register.html")
+	})
+
 	r.GET("/dashboard", func(c *gin.Context) {
 		c.File("./web/pages/dashboard.html")
+	})
+
+	r.GET("/profile-app", func(c *gin.Context) {
+		c.File("./web/pages/profile.html")
 	})
 
 	r.GET("/files-app", func(c *gin.Context) {

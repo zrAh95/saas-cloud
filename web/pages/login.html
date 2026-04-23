@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/mazer-assets/compiled/css/app.css">
   <link rel="stylesheet" href="/mazer-assets/compiled/css/app-dark.css">
   <link rel="stylesheet" href="/mazer-assets/compiled/css/auth.css">
+  <link rel="stylesheet" href="/mazer-assets/extensions/sweetalert2/sweetalert2.min.css">
 </head>
 <body>
   <script src="/mazer-assets/static/js/initTheme.js"></script>
@@ -15,10 +16,10 @@
       <div class="col-lg-5 col-12">
         <div id="auth-left">
           <div class="auth-logo">
-            <a href="/login"><strong style="font-size:1.8rem;color:#435ebe;">SaaS Cloud</strong></a>
+            <a href="/login"><strong style="font-size:1.8rem;color:#435ebe;">Abelima Cloud</strong></a>
           </div>
           <h1 class="auth-title">Login.</h1>
-          <p class="auth-subtitle mb-5">Masuk ke cloud storage rumahmu dengan backend Go yang sama.</p>
+          <p class="auth-subtitle mb-5">Ini Platform Cloud Khusus Penyimpanan Foto Hasil Dokumentasi Si Reza</p>
 
           <form id="loginForm">
             <div class="form-group position-relative has-icon-left mb-4">
@@ -38,7 +39,8 @@
 
           <div id="errorBox" class="text-danger mt-3 fw-bold"></div>
           <div class="text-center mt-5 text-lg fs-4">
-            <p class="text-gray-600">Login pakai akun yang sudah kamu register dan verify via API.</p>
+            <p class="text-gray-600 mb-2">Belum punya akun?</p>
+            <p><a class="font-bold" href="/register">Telepon Si Reza Nya, Za Bikinin Akun Nya Dong !!</a></p>
           </div>
         </div>
       </div>
@@ -50,6 +52,7 @@
 
   <script src="/frontend-js/api.js"></script>
   <script src="/frontend-js/auth.js"></script>
+  <script src="/mazer-assets/extensions/sweetalert2/sweetalert2.min.js"></script>
   <script>
     document.getElementById("loginForm").addEventListener("submit", async function (event) {
       event.preventDefault();

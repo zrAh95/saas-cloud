@@ -3,6 +3,7 @@ package utils
 import (
 	"regexp"
 	"saas-cloud/config"
+	"strings"
 )
 
 // ValidateEmail checks if email format is valid
@@ -46,4 +47,20 @@ func CheckEmailExists(email string) bool {
 		return false
 	}
 	return count > 0
+}
+
+func NormalizeWhatsAppNumber(phone string) string {
+	cleaned := regexp.MustCompile(`[^0-9+]`).ReplaceAllString(strings.TrimSpace(phone), "")
+	cleaned = strings.TrimPrefix(cleaned, "+")
+
+	if strings.HasPrefix(cleaned, "0") {
+		return "62" + strings.TrimPrefix(cleaned, "0")
+	}
+
+	return cleaned
+}
+
+func ValidateWhatsAppNumber(phone string) bool {
+	normalized := NormalizeWhatsAppNumber(phone)
+	return regexp.MustCompile(`^62[0-9]{8,15}$`).MatchString(normalized)
 }

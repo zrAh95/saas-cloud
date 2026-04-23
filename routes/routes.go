@@ -23,6 +23,9 @@ func SetupRoutes(r *gin.Engine) {
 	authProtected.Use(middleware.AuthMiddleware())
 	{
 		authProtected.GET("/profile", handlers.GetProfile)
+		authProtected.PUT("/profile", handlers.UpdateProfile)
+		authProtected.GET("/profile/avatar", handlers.GetProfileAvatar)
+		authProtected.POST("/profile/avatar", handlers.UploadProfileAvatar)
 	}
 
 	dashboard := api.Group("/dashboard")
