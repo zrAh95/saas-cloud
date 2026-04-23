@@ -10,42 +10,46 @@ import (
 func SetupRoutes(r *gin.Engine) {
 	api := r.Group("/api/v1")
 
-	// PUBLIC
 	auth := api.Group("/auth")
 	{
 		auth.POST("/register", handlers.Register)
 		auth.POST("/verify", handlers.VerifyOTP)
 		auth.POST("/login", handlers.Login)
 		auth.POST("/logout", handlers.Logout)
-		//buat refresh token 
 		auth.POST("/refresh", handlers.RefreshToken)
 	}
 
-	// 🔐 PROTECTED
 	authProtected := api.Group("/auth")
 	authProtected.Use(middleware.AuthMiddleware())
 	{
 		authProtected.GET("/profile", handlers.GetProfile)
 	}
 
-	// FILE
+	dashboard := api.Group("/dashboard")
+	dashboard.Use(middleware.AuthMiddleware())
+	{
+		dashboard.GET("/stats", handlers.GetDashboardStats)
+	}
+
 	files := api.Group("/files")
 	files.Use(middleware.AuthMiddleware())
 	{
+		files.POST("/folders", handlers.CreateFolder)
 		files.POST("/upload", handlers.UploadFile)
 		files.GET("/", handlers.GetFiles)
+		files.GET("/folders/:id/contents", handlers.GetFolderContents)
+		files.GET("/shared", handlers.GetSharedFiles)
+		files.POST("/shares/:id/accept", handlers.AcceptShare)
 		files.GET("/:id", handlers.GetFileByID)
+		files.GET("/:id/download", handlers.DownloadFile)
 		files.DELETE("/:id", handlers.DeleteFile)
 		files.POST("/:id/share", handlers.ShareFile)
-		files.GET("/shared", handlers.GetSharedFiles)
-		files.POST("/:id/share/accept", handlers.AcceptShare)
+		files.DELETE("/:id/share", handlers.RevokeFileAccess)
 	}
 
-	// LOG (protected)
 	logs := api.Group("/logs")
 	logs.Use(middleware.AuthMiddleware())
 	{
 		logs.GET("/", handlers.GetLogs)
 	}
 }
-

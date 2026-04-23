@@ -20,19 +20,20 @@ func init() {
 
 func GenerateToken(userID int) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id": userID,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+		"user_id":    userID,
+		"token_type": "access",
+		"exp":        time.Now().Add(time.Hour * 24).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
 	return token.SignedString(SECRET_KEY)
 }
 
 func GenerateAccessToken(userID int) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id": userID,
-		"exp":     time.Now().Add(time.Minute * 15).Unix(),
+		"user_id":    userID,
+		"token_type": "access",
+		"exp":        time.Now().Add(time.Minute * 15).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -41,8 +42,9 @@ func GenerateAccessToken(userID int) (string, error) {
 
 func GenerateRefreshToken(userID int) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id": userID,
-		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(),
+		"user_id":    userID,
+		"token_type": "refresh",
+		"exp":        time.Now().Add(time.Hour * 24 * 7).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

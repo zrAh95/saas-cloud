@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - SaaS Cloud</title>
+  <link rel="stylesheet" href="/mazer-assets/compiled/css/app.css">
+  <link rel="stylesheet" href="/mazer-assets/compiled/css/app-dark.css">
+  <link rel="stylesheet" href="/mazer-assets/compiled/css/iconly.css">
+  <link rel="stylesheet" href="/mazer-assets/extensions/apexcharts/apexcharts.css">
+  <link rel="stylesheet" href="/mazer-assets/extensions/sweetalert2/sweetalert2.min.css">
+</head>
+<body>
+  <script src="/mazer-assets/static/js/initTheme.js"></script>
+  <div id="app">
+    <div id="sidebar">
+      <div class="sidebar-wrapper active">
+        <div class="sidebar-header position-relative">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="logo">
+              <a href="/dashboard" style="font-weight:800;font-size:1.5rem;color:#435ebe;">SaaS Cloud</a>
+            </div>
+            <div class="sidebar-toggler x">
+              <a href="#" class="sidebar-hide d-xl-none d-block"><i class="bi bi-x bi-middle"></i></a>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-menu">
+          <ul class="menu">
+            <li class="sidebar-title">Menu</li>
+            <li class="sidebar-item active"><a href="/dashboard" class="sidebar-link"><i class="bi bi-grid-fill"></i><span>Dashboard</span></a></li>
+            <li class="sidebar-item"><a href="/files-app" class="sidebar-link"><i class="bi bi-folder-fill"></i><span>My Files</span></a></li>
+            <li class="sidebar-item"><a href="/shared-app" class="sidebar-link"><i class="bi bi-share-fill"></i><span>Shared With Me</span></a></li>
+            <li class="sidebar-item"><a href="/folder-app" class="sidebar-link"><i class="bi bi-diagram-3-fill"></i><span>Folder View</span></a></li>
+            <li class="sidebar-item"><a href="#" id="logoutBtn" class="sidebar-link"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="main">
+      <header class="mb-3">
+        <a href="#" class="burger-btn d-block d-xl-none"><i class="bi bi-justify fs-3"></i></a>
+      </header>
+
+      <div class="page-heading">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div>
+            <h3>Cloud Rumah Dashboard</h3>
+            <p class="text-muted mb-0">Pantau file, folder, traffic upload, dan sisa storage hardisk lokal.</p>
+          </div>
+          <button class="btn btn-outline-primary" onclick="loadDashboardStats()">Refresh Stats</button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <section class="row">
+          <div class="col-12 col-lg-9">
+            <div class="row">
+              <div class="col-6 col-lg-3 col-md-6">
+                <div class="card">
+                  <div class="card-body px-4 py-4-5">
+                    <div class="stats-icon blue mb-2"><i class="iconly-boldDocument"></i></div>
+                    <h6 class="text-muted font-semibold">Total File</h6>
+                    <h3 id="totalFiles" class="font-extrabold mb-0">0</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3 col-md-6">
+                <div class="card">
+                  <div class="card-body px-4 py-4-5">
+                    <div class="stats-icon purple mb-2"><i class="iconly-boldFolder"></i></div>
+                    <h6 class="text-muted font-semibold">Folder</h6>
+                    <h3 id="totalFolders" class="font-extrabold mb-0">0</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3 col-md-6">
+                <div class="card">
+                  <div class="card-body px-4 py-4-5">
+                    <div class="stats-icon green mb-2"><i class="iconly-boldUpload"></i></div>
+                    <h6 class="text-muted font-semibold">App Storage</h6>
+                    <h3 id="usedStorage" class="font-extrabold mb-0">0 GB</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3 col-md-6">
+                <div class="card">
+                  <div class="card-body px-4 py-4-5">
+                    <div class="stats-icon red mb-2"><i class="iconly-boldMessage"></i></div>
+                    <h6 class="text-muted font-semibold">Pending Share</h6>
+                    <h3 id="pendingShares" class="font-extrabold mb-0">0</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h4>Traffic Upload 7 Hari</h4>
+                <p class="text-muted mb-0">Diambil dari file yang kamu upload ke database, bukan angka dummy.</p>
+              </div>
+              <div class="card-body">
+                <div id="uploadTrafficChart"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-3">
+            <div class="card">
+              <div class="card-header">
+                <h4>Hardisk System</h4>
+              </div>
+              <div class="card-body">
+                <div id="diskUsageChart"></div>
+                <div class="mt-2">
+                  <div class="d-flex justify-content-between">
+                    <span>Dipakai</span>
+                    <strong id="diskUsagePct">0%</strong>
+                  </div>
+                  <div class="progress progress-primary mt-2 mb-4">
+                    <div id="diskProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                  </div>
+                  <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                    <span>Sisa Storage</span>
+                    <strong id="freeStorage">0 GB</strong>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span>Total Disk</span>
+                    <strong id="totalDisk">0 GB</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h4>Quick Access</h4>
+              </div>
+              <div class="card-body d-grid gap-2">
+                <a class="btn btn-primary" href="/files-app">Open My Files</a>
+                <a class="btn btn-outline-primary" href="/shared-app">Open Shared With Me</a>
+                <a class="btn btn-outline-primary" href="/folder-app">Open Folder View</a>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="/frontend-js/api.js"></script>
+  <script src="/frontend-js/auth.js"></script>
+  <script src="/frontend-js/guard.js"></script>
+  <script src="/frontend-js/dashboard.js"></script>
+  <script src="/mazer-assets/extensions/sweetalert2/sweetalert2.min.js"></script>
+  <script src="/mazer-assets/extensions/apexcharts/apexcharts.min.js"></script>
+  <script src="/mazer-assets/static/js/components/dark.js"></script>
+  <script src="/mazer-assets/extensions/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+  <script src="/mazer-assets/compiled/js/app.js"></script>
+  <script>
+    requireAuth();
+    bindLogoutButton();
+    loadDashboardStats();
+  </script>
+</body>
+</html>

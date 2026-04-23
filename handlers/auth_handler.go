@@ -58,7 +58,17 @@ func Register(c *gin.Context) {
 	// Validate password strength
 	passwordErrors := utils.ValidatePassword(input.Password)
 	if len(passwordErrors) > 0 {
-		utils.Error(c, http.StatusBadRequest, "Password tidak memenuhi kriteria: "+passwordErrors["length"])
+		for _, msg := range []string{
+			passwordErrors["length"],
+			passwordErrors["uppercase"],
+			passwordErrors["lowercase"],
+			passwordErrors["number"],
+		} {
+			if msg != "" {
+				utils.Error(c, http.StatusBadRequest, "Password tidak memenuhi kriteria: "+msg)
+				return
+			}
+		}
 		return
 	}
 
@@ -204,7 +214,7 @@ func Login(c *gin.Context) {
 	// Rate limiting: max 5 failed attempts per 15 minutes
 	if !services.CheckRateLimit("login:"+input.Email, 5, 900) {
 		remaining := services.GetRateLimitRemaining("login:"+input.Email, 5, 900)
-		utils.Error(c, http.StatusTooManyRequests, 
+		utils.Error(c, http.StatusTooManyRequests,
 			fmt.Sprintf("Terlalu banyak percobaan login. Coba lagi dalam 15 menit. Sisa percobaan: %d", remaining))
 		return
 	}
@@ -291,6 +301,12 @@ func RefreshToken(c *gin.Context) {
 	userID, ok := userIDFloat.(float64)
 	if !ok {
 		utils.Error(c, http.StatusUnauthorized, "Token tidak valid")
+		return
+	}
+
+	tokenType, ok := claims["token_type"].(string)
+	if !ok || tokenType != "refresh" {
+		utils.Error(c, http.StatusUnauthorized, "Refresh token tidak valid")
 		return
 	}
 

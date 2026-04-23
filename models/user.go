@@ -4,6 +4,7 @@ import "time"
 
 type User struct {
 	ID         uint      `gorm:"primaryKey;column:id"`
+	Name       string    `gorm:"column:name"`
 	Email      string    `gorm:"column:email"`
 	Password   string    `gorm:"column:password"`
 	IsVerified int       `gorm:"column:is_verified"`

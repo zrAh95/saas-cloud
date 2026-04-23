@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - SaaS Cloud</title>
+  <link rel="stylesheet" href="/mazer-assets/compiled/css/app.css">
+  <link rel="stylesheet" href="/mazer-assets/compiled/css/app-dark.css">
+  <link rel="stylesheet" href="/mazer-assets/compiled/css/auth.css">
+</head>
+<body>
+  <script src="/mazer-assets/static/js/initTheme.js"></script>
+  <div id="auth">
+    <div class="row h-100">
+      <div class="col-lg-5 col-12">
+        <div id="auth-left">
+          <div class="auth-logo">
+            <a href="/login"><strong style="font-size:1.8rem;color:#435ebe;">SaaS Cloud</strong></a>
+          </div>
+          <h1 class="auth-title">Login.</h1>
+          <p class="auth-subtitle mb-5">Masuk ke cloud storage rumahmu dengan backend Go yang sama.</p>
+
+          <form id="loginForm">
+            <div class="form-group position-relative has-icon-left mb-4">
+              <input id="email" type="email" class="form-control form-control-xl" placeholder="Email" required>
+              <div class="form-control-icon">
+                <i class="bi bi-person"></i>
+              </div>
+            </div>
+            <div class="form-group position-relative has-icon-left mb-4">
+              <input id="password" type="password" class="form-control form-control-xl" placeholder="Password" required>
+              <div class="form-control-icon">
+                <i class="bi bi-shield-lock"></i>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block btn-lg shadow-lg mt-5" type="submit">Log in</button>
+          </form>
+
+          <div id="errorBox" class="text-danger mt-3 fw-bold"></div>
+          <div class="text-center mt-5 text-lg fs-4">
+            <p class="text-gray-600">Login pakai akun yang sudah kamu register dan verify via API.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-7 d-none d-lg-block">
+        <div id="auth-right"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/frontend-js/api.js"></script>
+  <script src="/frontend-js/auth.js"></script>
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const errorBox = document.getElementById("errorBox");
+      errorBox.textContent = "";
+
+      try {
+        await login(
+          document.getElementById("email").value,
+          document.getElementById("password").value
+        );
+      } catch (error) {
+        errorBox.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>

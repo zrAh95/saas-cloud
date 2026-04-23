@@ -76,6 +76,13 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		tokenType, ok := claims["token_type"].(string)
+		if !ok || tokenType != "access" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Access token tidak valid"})
+			c.Abort()
+			return
+		}
+
 		// simpan ke context
 		c.Set("user_id", int(userID))
 
