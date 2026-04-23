@@ -10,3 +10,6 @@
 ## Tech Stack
 - Golang (Gin)
 - MySQL
+- Html, css, js
+- Bootstrap 5
+- sweetalertjs
